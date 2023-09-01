@@ -14,8 +14,6 @@ class IcsLinkGenerator
     protected ?string $DESCRIPTION = null;
     protected bool $ALLDAY = false;
 
-    protected string $timezone = 'Europe/Berlin';
-
     /**
      * Base urls.
      *
@@ -48,6 +46,9 @@ class IcsLinkGenerator
 
     /**
      * Building basis for our Generator.
+     * 
+     * Note: make sure your dates has converted time.
+     * You can also pass string like this: '2023-08-05 12:15:00+2'
      *
      * @param string|null $dtend
      * @param string|null $dtstart
@@ -64,6 +65,8 @@ class IcsLinkGenerator
         $this->LOCATION = $location;
         $this->DESCRIPTION = $description;
         $this->ALLDAY = $allday;
+
+        $this->storeAsFile('tmp.json', $this->getAll());
     }
 
     /**
@@ -75,6 +78,16 @@ class IcsLinkGenerator
     public static function make(array $data): static
     {
         return new static($data['DTEND'], $data['DTSTART'], $data['SUMMARY'], $data['LOCATION'], $data['DESCRIPTION'], $data['ALLDAY']);
+    }
+
+    /**
+     * Stores serialized url as file.
+     * 
+     * @return bool
+     */
+    public function storeAsFile(string $path, mixed $content): bool
+    {
+        return file_put_contents($path, json_encode($content));
     }
 
     /**
@@ -93,6 +106,26 @@ class IcsLinkGenerator
     }
 
     /**
+     * Makes a serialized array of label, url and client
+     * 
+     * @return array
+     */
+    protected function getSerializedUrls(): array
+    {
+        $urls = [];
+
+        foreach ($this->labels as $client => $label) {
+            $urls[$client] = [
+                'client' => $client
+                'label' => $label,
+                'url'   => $this->baseUrls[$client]
+            ];
+        }
+
+        return $urls;
+    }
+
+    /**
      * Set Labels in a key value pair.
      *
      * @param array $labels
@@ -107,40 +140,51 @@ class IcsLinkGenerator
         return $this;
     }
 
-  /**
-   * Sets timezone for our urls.
-   *
-   * @param string $timezone
-   * @return $this
-   */
-    public function setTimezone(string $timezone): static
-    {
-      $this->timezone = $timezone;
-
-      return $this;
-    }
-
     /**
-     * Generates all Ics Urls.
+     * Generates all possible ics urls.
      *
      * @return array
      */
     public function getAll(): array
     {
-        foreach ($this->baseUrls as $client => $value) {
-            $this->baseUrls[$client] .= match ($client) {
-                'outlook' => $this->makeOutlookParameters(),
-                'office' => $this->makeOfficeParameters(),
-                'google' => $this->makeGoogleParameters(),
-                'aol' => $this->makeAOLParameters(),
-                'yahoo' => $this->makeYahooParameters(),
-            };
-        }
+        return array_map(function ($client) {
+            return $client['url'] .= $this->generateUrl($client)
+        }, $this->getSerializedUrls())
+    }
 
-        return $this->baseUrls;
+    /**
+     * Generates specific ics urls.
+     *
+     * @return array
+     */
+    public function getSpecific(array $clients): array
+    {
+        return array_filter($this->getSerializedUrls(), function($client) {
+            return in_array($client, $clients);
+        });
+    }
+
+    /**
+     * Generates url matching our client like 'outlook', 'outlook_mobile' ...
+     *  
+     * @return array
+     */
+    public function generateUrl(string $client): array
+    {
+        return match ($client) {
+            'outlook' => $this->getOutlookParameters(),
+            'outlook_mobile' => $this->getOutlookParameters(),
+            'office' => $this->getOfficeParameters(),
+            'office_mobile' => $this->getOfficeParameters(),
+            'google' => $this->getGoogleParameters(),
+            'aol' => $this->getAOLParameters(),
+            'yahoo' => $this->getYahooParameters(),
+        };
     }
 
   /**
+   * Formats our datetime.
+   * 
    * @param string $datetime
    * @param string $format
    * @return string
@@ -148,9 +192,146 @@ class IcsLinkGenerator
    */
   protected function makeDatetimeIncludedTimezone(string $datetime, string $format = 'Ymd\THis\Z'): string
   {
-    $timezone = new DateTimeZone($this->timezone);
-    $date = DateTime::createFromFormat($format, $datetime, $timezone);
-
-    return $date->format($format);
+    return date($format, $strtotime($datetime));
   }
+
+    /**
+     * Creates Uri parameters for Outlook
+     *
+     * @param array $event
+     * @return string
+     */
+    protected function getOutlookParameters(): string
+    {
+        $date_format = 'Y-m-d\TH:i:s';
+        $dtend = $this->makeDatetimeIncludedTimezone($this->DTEND, $date_format);
+        $dtstart = $this->makeDatetimeIncludedTimezone($this->DTSTART, $date_format);
+
+        $allday = $this->makePropValueEncoded('allday', $this->ALLDAY, true);
+        $body = $this->makePropValueEncoded('body', $this->SUMMARY);
+        $enddt= $this->makePropValueEncoded('enddt', $dtend);
+        $location = $this->makePropValueEncoded('location', $this->LOCATION);
+        $path = $this->makePropValueEncoded('path', '/calendar/action/compose');
+        $rru = $this->makePropValueEncoded('rru', 'addevent');
+        $startdt = $this->makePropValueEncoded('startdt', $dtstart);
+        $subject = $this->makePropValueEncoded('subject', $this->DESCRIPTION);
+
+        return $allday . $body . $enddt . $location . $path . $rru . $startdt . $subject;
+
+        // outlook example
+        //
+        // allday=false
+        // &body=summary
+        // &enddt=2023-08-24T14:45:00
+        // &location=location
+        // &path=%2Fcalendar%2Faction%2Fcompose
+        // &rru=addevent
+        // &startdt=2023-08-24T14%3A15%3A00
+        // &subject=title
+    }
+
+    /**
+     * Creates Uri parameters for Office
+     * Is equal to Outlook url.
+     *
+     * @param array $event
+     * @return string
+     */
+    protected function makeOfficeParameters(): string
+    {
+        return $this->makeOutlookParameters();
+
+        // office example
+        //
+        // allday=false
+        // &body=summary
+        // &enddt=2023-08-24T14%3A45%3A00%2B00%3A00
+        // &location=location
+        // &path=%2Fcalendar%2Faction%2Fcompose
+        // &rru=addevent
+        // &startdt=2023-08-24T14%3A15%3A00%2B00%3A00
+        // &subject=title
+    }
+
+    /**
+     * Creates Uri parameters for Google
+     *
+     * @param array $event
+     * @return string
+     */
+    protected function makeGoogleParameters(array $event): string
+    {
+        $date_format = $this->ALLDAY ? 'Ymd' : 'Ymd\THis\Z';
+        
+        $dtend = $this->makeDatetimeIncludedTimezone($this->DTEND, $date_format);
+        $dtstart = $this->makeDatetimeIncludedTimezone($this->DTSTART, $date_format);
+
+        $action = $this->makePropValueEncoded('action', 'TEMPLATE');
+        $dates = $this->makePropValueEncoded('dates', "$dtstart/$dtend");
+        $details = $this->makePropValueEncoded('details', $this->SUMMARY);
+        $location = $this->makePropValueEncoded('location', $this->LOCATION);
+        $title = $this->makePropValueEncoded('text', $this->DESCRIPTION);
+
+        return $action . $dates . $details . $location . $title;
+
+        // google example
+        //
+        // action=TEMPLATE
+        // &dates=20230824T151500Z%2F20230825T164500Z OR IF ALLDAY &dates=20230824%2F20230825
+        // &details=summary
+        // &location=location
+        // &text=title
+    }
+
+    /**
+     * Creates Uri parameters for AOL
+     *
+     * @param array $event
+     * @return string
+     */
+    protected function makeAOLParameters(array $event): string
+    {
+        return $this->makeYahooParameters($event);
+
+        // aol example
+        //
+        // action=TEMPLATE
+        // &dates=20230824T151500Z%2F20230825T164500Z
+        // &details=summary
+        // &location=location
+        // &text=title
+    }
+
+    /**
+     * Creates Uri parameters for Yahoo
+     *
+     * @param array $event
+     * @return string
+     */
+    protected function makeYahooParameters(array $event): string
+    {
+        $date_format = $this->ALLDAY ? 'Ymd' : 'Ymd\THis\Z';
+
+        $dtend = $this->makeDatetimeIncludedTimezone($this->DTEND);
+        $dtstart = $this->makeDatetimeIncludedTimezone($this->DTSTART);
+
+        $description = $this->makePropValueEncoded('desc', $this->SUMMARY);
+        $duration = $this->makePropValueEncoded('dur');
+        $et = $this->makePropValueEncoded('et', $dtend);
+        $in_loc = $this->makePropValueEncoded('in_loc', $this->LOCATION);
+        $st = $this->makePropValueEncoded('st', $dtstart);
+        $title = $this->makePropValueEncoded('title', $this->DESCRIPTION);
+        $v = $this->makePropValueEncoded('v', '60');
+
+        return $description . $duration . $et . $in_loc . $st . $title . $v;
+
+        // yahoo example
+        //
+        // desc=summary
+        // &et=20230825T164500Z OR IF ALLDAY 20230825
+        // &in_loc=location
+        // &st=20230824T151500Z OR IF ALLDAY 20230824
+        // &title=title
+        // &v=60
+    }
 }
