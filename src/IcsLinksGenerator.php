@@ -1,6 +1,8 @@
 <?php
 
-class IcsLinkGenerator
+namespace CrusherRL;
+
+class IcsLinksGenerator
 {
     /**
      * Our variables we use to build our urls.
@@ -12,7 +14,7 @@ class IcsLinkGenerator
     protected ?string $SUMMARY = null;
     protected ?string $LOCATION = null;
     protected ?string $DESCRIPTION = null;
-    protected bool $ALLDAY = false;
+    protected ?string $ALLDAY = 'false';
 
     /**
      * Base urls.
@@ -55,9 +57,9 @@ class IcsLinkGenerator
      * @param string|null $summary
      * @param string|null $location
      * @param string|null $description
-     * @param bool $allday
+     * @param string|null $allday
      */
-    public function __construct(?string $dtend, ?string $dtstart, ?string $summary, ?string $location, ?string $description, bool $allday = false)
+    public function __construct(?string $dtend, ?string $dtstart, ?string $summary, ?string $location, ?string $description, ?string $allday = 'false')
     {
         $this->DTEND = $dtend;
         $this->DTSTART = $dtstart;
@@ -65,8 +67,6 @@ class IcsLinkGenerator
         $this->LOCATION = $location;
         $this->DESCRIPTION = $description;
         $this->ALLDAY = $allday;
-
-        $this->storeAsFile('tmp.json', $this->getAll());
     }
 
     /**
@@ -98,7 +98,7 @@ class IcsLinkGenerator
      * @param bool $isFirst
      * @return string
      */
-    protected function getEncodesPropValue(string $prop, string $value = '', bool $isFirst = false): string
+    protected function getEncodedPropValue(string $prop, string $value = '', bool $isFirst = false): string
     {
         $value = urlencode($value);
 
@@ -116,7 +116,7 @@ class IcsLinkGenerator
 
         foreach ($this->labels as $client => $label) {
             $urls[$client] = [
-                'client' => $client
+                'client' => $client,
                 'label' => $label,
                 'url'   => $this->baseUrls[$client]
             ];
@@ -148,8 +148,8 @@ class IcsLinkGenerator
     public function getAll(): array
     {
         return array_map(function ($client) {
-            return $client['url'] .= $this->generateUrl($client)
-        }, $this->getSerializedUrls())
+            return $client['url'] .= $this->generateUrl($client['client']);
+        }, $this->getSerializedUrls());
     }
 
     /**
@@ -159,7 +159,7 @@ class IcsLinkGenerator
      */
     public function getSpecific(array $clients): array
     {
-        return array_filter($this->getSerializedUrls(), function($client) {
+        return array_filter($this->getSerializedUrls(), function($client) use ($clients) {
             return in_array($client, $clients);
         });
     }
@@ -169,7 +169,7 @@ class IcsLinkGenerator
      *  
      * @return array
      */
-    public function generateUrl(string $client): array
+    public function generateUrl(string $client): string
     {
         return match ($client) {
             'outlook' => $this->getOutlookParameters(),
@@ -188,12 +188,16 @@ class IcsLinkGenerator
    * @param string $datetime
    * @param string $format
    * @return string
-   * @throws Exception
    */
-  protected function makeDatetimeIncludedTimezone(string $datetime, string $format = 'Ymd\THis\Z'): string
-  {
-    return date($format, $strtotime($datetime));
-  }
+    protected function makeDatetimeIncludedTimezone(string $datetime, string $format = 'Ymd\THis\Z'): string
+    {
+        return date($format, strtotime($datetime));
+    }
+
+    protected function parseToBool(string $str): bool
+    {
+        return filter_var($str, FILTER_VALIDATE_BOOLEAN);
+    }
 
     /**
      * Creates Uri parameters for Outlook
@@ -207,14 +211,14 @@ class IcsLinkGenerator
         $dtend = $this->makeDatetimeIncludedTimezone($this->DTEND, $date_format);
         $dtstart = $this->makeDatetimeIncludedTimezone($this->DTSTART, $date_format);
 
-        $allday = $this->makePropValueEncoded('allday', $this->ALLDAY, true);
-        $body = $this->makePropValueEncoded('body', $this->SUMMARY);
-        $enddt= $this->makePropValueEncoded('enddt', $dtend);
-        $location = $this->makePropValueEncoded('location', $this->LOCATION);
-        $path = $this->makePropValueEncoded('path', '/calendar/action/compose');
-        $rru = $this->makePropValueEncoded('rru', 'addevent');
-        $startdt = $this->makePropValueEncoded('startdt', $dtstart);
-        $subject = $this->makePropValueEncoded('subject', $this->DESCRIPTION);
+        $allday = "&allday=$this->ALLDAY";
+        $body = $this->getEncodedPropValue('body', $this->SUMMARY);
+        $enddt= $this->getEncodedPropValue('enddt', $dtend);
+        $location = $this->getEncodedPropValue('location', $this->LOCATION);
+        $path = $this->getEncodedPropValue('path', '/calendar/action/compose');
+        $rru = $this->getEncodedPropValue('rru', 'addevent');
+        $startdt = $this->getEncodedPropValue('startdt', $dtstart);
+        $subject = $this->getEncodedPropValue('subject', $this->DESCRIPTION);
 
         return $allday . $body . $enddt . $location . $path . $rru . $startdt . $subject;
 
@@ -237,9 +241,9 @@ class IcsLinkGenerator
      * @param array $event
      * @return string
      */
-    protected function makeOfficeParameters(): string
+    protected function getOfficeParameters(): string
     {
-        return $this->makeOutlookParameters();
+        return $this->getOutlookParameters();
 
         // office example
         //
@@ -256,28 +260,27 @@ class IcsLinkGenerator
     /**
      * Creates Uri parameters for Google
      *
-     * @param array $event
      * @return string
      */
-    protected function makeGoogleParameters(array $event): string
+    protected function getGoogleParameters(): string
     {
-        $date_format = $this->ALLDAY ? 'Ymd' : 'Ymd\THis\Z';
+        $date_format = $this->parseToBool($this->ALLDAY) ? 'Ymd' : 'Ymd\THis';
         
         $dtend = $this->makeDatetimeIncludedTimezone($this->DTEND, $date_format);
         $dtstart = $this->makeDatetimeIncludedTimezone($this->DTSTART, $date_format);
 
-        $action = $this->makePropValueEncoded('action', 'TEMPLATE');
-        $dates = $this->makePropValueEncoded('dates', "$dtstart/$dtend");
-        $details = $this->makePropValueEncoded('details', $this->SUMMARY);
-        $location = $this->makePropValueEncoded('location', $this->LOCATION);
-        $title = $this->makePropValueEncoded('text', $this->DESCRIPTION);
+        $action = $this->getEncodedPropValue('action', 'TEMPLATE');
+        $dates = $this->getEncodedPropValue('dates', "$dtstart/$dtend");
+        $details = $this->getEncodedPropValue('details', $this->SUMMARY);
+        $location = $this->getEncodedPropValue('location', $this->LOCATION);
+        $title = $this->getEncodedPropValue('text', $this->DESCRIPTION);
 
         return $action . $dates . $details . $location . $title;
 
         // google example
         //
         // action=TEMPLATE
-        // &dates=20230824T151500Z%2F20230825T164500Z OR IF ALLDAY &dates=20230824%2F20230825
+        // &dates=20230824T151500%2F20230825T164500 OR IF ALLDAY &dates=20230824%2F20230825
         // &details=summary
         // &location=location
         // &text=title
@@ -285,13 +288,12 @@ class IcsLinkGenerator
 
     /**
      * Creates Uri parameters for AOL
-     *
-     * @param array $event
+     * 
      * @return string
      */
-    protected function makeAOLParameters(array $event): string
+    protected function getAOLParameters(): string
     {
-        return $this->makeYahooParameters($event);
+        return $this->getYahooParameters();
 
         // aol example
         //
@@ -305,23 +307,22 @@ class IcsLinkGenerator
     /**
      * Creates Uri parameters for Yahoo
      *
-     * @param array $event
      * @return string
      */
-    protected function makeYahooParameters(array $event): string
+    protected function getYahooParameters(): string
     {
-        $date_format = $this->ALLDAY ? 'Ymd' : 'Ymd\THis\Z';
+        $date_format = $this->parseToBool($this->ALLDAY) ? 'Ymd' : 'Ymd\THis\Z';
 
         $dtend = $this->makeDatetimeIncludedTimezone($this->DTEND);
         $dtstart = $this->makeDatetimeIncludedTimezone($this->DTSTART);
 
-        $description = $this->makePropValueEncoded('desc', $this->SUMMARY);
-        $duration = $this->makePropValueEncoded('dur');
-        $et = $this->makePropValueEncoded('et', $dtend);
-        $in_loc = $this->makePropValueEncoded('in_loc', $this->LOCATION);
-        $st = $this->makePropValueEncoded('st', $dtstart);
-        $title = $this->makePropValueEncoded('title', $this->DESCRIPTION);
-        $v = $this->makePropValueEncoded('v', '60');
+        $description = $this->getEncodedPropValue('desc', $this->SUMMARY);
+        $duration = $this->getEncodedPropValue('dur');
+        $et = $this->getEncodedPropValue('et', $dtend);
+        $in_loc = $this->getEncodedPropValue('in_loc', $this->LOCATION);
+        $st = $this->getEncodedPropValue('st', $dtstart);
+        $title = $this->getEncodedPropValue('title', $this->DESCRIPTION);
+        $v = $this->getEncodedPropValue('v', '60');
 
         return $description . $duration . $et . $in_loc . $st . $title . $v;
 

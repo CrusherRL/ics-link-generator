@@ -1,0 +1,9 @@
+{
+  "outlook": "https:\/\/outlook.live.com\/calendar\/0\/action\/compose?&allday=true&body=summaryHey%21&enddt=2023-08-15T15%3A00%3A00&location=locationHey%21&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2023-08-15T16%3A30%3A00&subject=descriptionHey%21",
+  "outlook_mobile": "https:\/\/outlook.live.com\/calendar\/0\/deeplink\/compose?&allday=true&body=summaryHey%21&enddt=2023-08-15T15%3A00%3A00&location=locationHey%21&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2023-08-15T16%3A30%3A00&subject=descriptionHey%21",
+  "office": "https:\/\/outlook.office.com\/calendar\/0\/action\/compose?&allday=true&body=summaryHey%21&enddt=2023-08-15T15%3A00%3A00&location=locationHey%21&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2023-08-15T16%3A30%3A00&subject=descriptionHey%21",
+  "office_mobile": "https:\/\/outlook.office.com\/calendar\/0\/deeplink\/compose?&allday=true&body=summaryHey%21&enddt=2023-08-15T15%3A00%3A00&location=locationHey%21&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2023-08-15T16%3A30%3A00&subject=descriptionHey%21",
+  "google": "https:\/\/calendar.google.com\/calendar\/render?&action=TEMPLATE&dates=20230815%2F20230815&details=summaryHey%21&location=locationHey%21&text=descriptionHey%21",
+  "aol": "https:\/\/calendar.aol.com\/?&desc=summaryHey%21&dur=&et=20230815T150000Z&in_loc=locationHey%21&st=20230815T163000Z&title=descriptionHey%21&v=60",
+  "yahoo": "https:\/\/calendar.yahoo.com\/?&desc=summaryHey%21&dur=&et=20230815T150000Z&in_loc=locationHey%21&st=20230815T163000Z&title=descriptionHey%21&v=60"
+}
