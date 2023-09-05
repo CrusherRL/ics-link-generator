@@ -5,14 +5,22 @@
   "keywords": [
     "ics",
     "ics link",
+    "ics url",
+    "ics event",
     "link generator",
+    "ics url generator",
+    "ics event generator",
+    "ics link generator",
+    "ics url generator",
     "ics generator",
     "calendar",
+    "calendar event",
+    "calendar url",
     "calendar link",
     "calendar ics"
   ],
   "require": {
-    "php": "^7.4 || ^8.0"
+    "php": "^8.0"
   },
   "minimum-stability": "dev",
   "prefer-stable": true,

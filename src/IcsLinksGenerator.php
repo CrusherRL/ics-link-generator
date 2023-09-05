@@ -9,12 +9,12 @@ class IcsLinksGenerator
      *
      * @var mixed|null
      */
-    protected ?string $DTEND = null;
-    protected ?string $DTSTART = null;
-    protected ?string $SUMMARY = null;
-    protected ?string $LOCATION = null;
-    protected ?string $DESCRIPTION = null;
-    protected ?string $ALLDAY = 'false';
+    protected string $DTSTART = '';
+    protected string $DTEND = '';
+    protected string $SUMMARY = '';
+    protected string $LOCATION = '';
+    protected string $DESCRIPTION = '';
+    protected string $ALLDAY = 'false';
 
     /**
      * Base urls.
@@ -23,9 +23,9 @@ class IcsLinksGenerator
      */
     protected array $baseUrls = [
         'outlook'        => 'https://outlook.live.com/calendar/0/action/compose?',
-        'outlook_mobile' => 'https://outlook.live.com/calendar/0/deeplink/compose?',
+        'outlook_mobile' => 'https://outlook.live.com/calendar/deeplink/compose?',
         'office'         => 'https://outlook.office.com/calendar/0/action/compose?',
-        'office_mobile'  => 'https://outlook.office.com/calendar/0/deeplink/compose?',
+        'office_mobile'  => 'https://outlook.office.com/calendar/deeplink/compose?',
         'google'         => 'https://calendar.google.com/calendar/render?',
         'aol'            => 'https://calendar.aol.com/?',
         'yahoo'          => 'https://calendar.yahoo.com/?',
@@ -48,21 +48,21 @@ class IcsLinksGenerator
 
     /**
      * Building basis for our Generator.
-     * 
+     *
      * Note: make sure your dates has converted time.
      * You can also pass string like this: '2023-08-05 12:15:00+2'
      *
-     * @param string|null $dtend
-     * @param string|null $dtstart
-     * @param string|null $summary
-     * @param string|null $location
-     * @param string|null $description
-     * @param string|null $allday
+     * @param string $dtend
+     * @param string $dtstart
+     * @param string $summary
+     * @param string $location
+     * @param string $description
+     * @param string $allday
      */
-    public function __construct(?string $dtend, ?string $dtstart, ?string $summary, ?string $location, ?string $description, ?string $allday = 'false')
+    public function __construct(string $dtstart, string $dtend, string $summary = '', string $location = '', string $description = '', string $allday = 'false')
     {
-        $this->DTEND = $dtend;
         $this->DTSTART = $dtstart;
+        $this->DTEND = $dtend;
         $this->SUMMARY = $summary;
         $this->LOCATION = $location;
         $this->DESCRIPTION = $description;
@@ -77,50 +77,37 @@ class IcsLinksGenerator
      */
     public static function make(array $data): static
     {
-        return new static($data['DTEND'], $data['DTSTART'], $data['SUMMARY'], $data['LOCATION'], $data['DESCRIPTION'], $data['ALLDAY']);
+        return new static(
+			$data['DTSTART'],
+			$data['DTEND'],
+				$data['SUMMARY'] ?? '',
+				$data['LOCATION'] ?? '',
+				$data['DESCRIPTION'] ?? '',
+				$data['ALLDAY'] ?? 'false');
     }
 
-    /**
-     * Stores serialized url as file.
-     * 
-     * @return bool
-     */
-    public function storeAsFile(string $path, mixed $content): bool
-    {
-        return file_put_contents($path, json_encode($content));
-    }
-
-    /**
-     * Encodes prop and value to lower case.
-     *
-     * @param string $prop
-     * @param string $value
-     * @param bool $isFirst
-     * @return string
-     */
-    protected function getEncodedPropValue(string $prop, string $value = '', bool $isFirst = false): string
-    {
-        $value = urlencode($value);
-
-        return $isFirst ? "$prop=$value" : "&$prop=$value";
-    }
+	// ====================
+	//
+	//	Refactoring output
+	//
+	// ====================
 
     /**
      * Makes a serialized array of label, url and client
-     * 
+     *
      * @return array
      */
     protected function getSerializedUrls(): array
     {
-        $urls = [];
+		$urls = [];
 
-        foreach ($this->labels as $client => $label) {
-            $urls[$client] = [
-                'client' => $client,
-                'label' => $label,
-                'url'   => $this->baseUrls[$client]
-            ];
-        }
+		foreach ($this->labels as $client => $label) {
+			$urls[$client] = [
+				'client' => $client,
+				'label' => $label,
+				'url'   => $this->baseUrls[$client]
+			];
+		}
 
         return $urls;
     }
@@ -140,69 +127,153 @@ class IcsLinksGenerator
         return $this;
     }
 
-    /**
-     * Generates all possible ics urls.
-     *
-     * @return array
-     */
-    public function getAll(): array
+	// ====================
+	//
+	//	Generating urls
+	//
+	// ====================
+
+	/**
+	 * Generates all possible ics urls.
+	 *
+	 * @param bool $serialize
+	 * @return array
+	 */
+    public function generate(bool $serialize = true): array
     {
-        return array_map(function ($client) {
-            return $client['url'] .= $this->generateUrl($client['client']);
+        return array_map(function ($client) use ($serialize) {
+            $client['url'] .= $this->getParameters($client['client']);
+			return $serialize ? $client : $client['url'];
         }, $this->getSerializedUrls());
     }
 
-    /**
-     * Generates specific ics urls.
-     *
-     * @return array
-     */
-    public function getSpecific(array $clients): array
+	/**
+	 * Generates specific ics urls.
+	 *
+	 * @param array $clients
+	 * @param bool $serialize
+	 * @return array
+	 */
+    public function generateSpecific(array $clients, bool $serialize = true): array
     {
-        return array_filter($this->getSerializedUrls(), function($client) use ($clients) {
-            return in_array($client, $clients);
-        });
+		return array_filter($this->generate($serialize), function($url, $client) use ($clients) {
+			return in_array($client, $clients);
+		}, ARRAY_FILTER_USE_BOTH);
     }
 
     /**
-     * Generates url matching our client like 'outlook', 'outlook_mobile' ...
-     *  
-     * @return array
+     * Generates uri matching our client like 'outlook', 'outlook_mobile' ...
+     *
+     * @param string $client
+     * @return string
      */
-    public function generateUrl(string $client): string
+    public function getParameters(string $client): string
     {
         return match ($client) {
-            'outlook' => $this->getOutlookParameters(),
-            'outlook_mobile' => $this->getOutlookParameters(),
-            'office' => $this->getOfficeParameters(),
-            'office_mobile' => $this->getOfficeParameters(),
+            'outlook', 'outlook_mobile' => $this->getOutlookParameters(),
+            'office', 'office_mobile' => $this->getOfficeParameters(),
             'google' => $this->getGoogleParameters(),
             'aol' => $this->getAOLParameters(),
             'yahoo' => $this->getYahooParameters(),
         };
     }
 
-  /**
-   * Formats our datetime.
-   * 
-   * @param string $datetime
-   * @param string $format
-   * @return string
-   */
-    protected function makeDatetimeIncludedTimezone(string $datetime, string $format = 'Ymd\THis\Z'): string
-    {
-        return date($format, strtotime($datetime));
-    }
+	// ====================
+	//
+	//	Generate full urls
+	//
+	// ====================
 
-    protected function parseToBool(string $str): bool
-    {
-        return filter_var($str, FILTER_VALIDATE_BOOLEAN);
-    }
+	/**
+	 * Make and return Outlook url.
+	 *
+	 * @return string
+	 */
+	public function makeOutlookUrl(): string
+	{
+		return $this->makeUrlFromClient('outlook');
+	}
+
+	/**
+	 * Make and return Outlook Mobile url.
+	 *
+	 * @return string
+	 */
+	public function makeOutlookMobileUrl(): string
+	{
+		return $this->makeUrlFromClient('outlook_mobile');
+	}
+
+	/**
+	 * Make and return Office url.
+	 *
+	 * @return string
+	 */
+	public function makeOfficeUrl(): string
+	{
+		return $this->makeUrlFromClient('office');
+	}
+
+	/**
+	 * Make and return Office Mobile url.
+	 *
+	 * @return string
+	 */
+	public function makeOfficeMobileUrl(): string
+	{
+		return $this->makeUrlFromClient('office_mobile');
+	}
+
+	/**
+	 * Make and return Google url.
+	 *
+	 * @return string
+	 */
+	public function makeGoogleUrl(): string
+	{
+		return $this->makeUrlFromClient('google');
+	}
+
+	/**
+	 * Make and return AOL url.
+	 *
+	 * @return string
+	 */
+	public function makeAOLUrl(): string
+	{
+		return $this->makeUrlFromClient('aol');
+	}
+
+	/**
+	 * Make and return Yahoo url.
+	 *
+	 * @return string
+	 */
+	public function makeYahooUrl(): string
+	{
+		return $this->makeUrlFromClient('yahoo');
+	}
+
+	/**
+	 * Making and return non-serialized url.
+	 *
+	 * @param string $client
+	 * @return string
+	 */
+	private function makeUrlFromClient(string $client): string
+	{
+		return $this->baseUrls[$client] . $this->getParameters($client);
+	}
+
+	// ====================
+	//
+	//	Building uri
+	//
+	// ====================
 
     /**
      * Creates Uri parameters for Outlook
      *
-     * @param array $event
      * @return string
      */
     protected function getOutlookParameters(): string
@@ -238,7 +309,6 @@ class IcsLinksGenerator
      * Creates Uri parameters for Office
      * Is equal to Outlook url.
      *
-     * @param array $event
      * @return string
      */
     protected function getOfficeParameters(): string
@@ -265,7 +335,7 @@ class IcsLinksGenerator
     protected function getGoogleParameters(): string
     {
         $date_format = $this->parseToBool($this->ALLDAY) ? 'Ymd' : 'Ymd\THis';
-        
+
         $dtend = $this->makeDatetimeIncludedTimezone($this->DTEND, $date_format);
         $dtstart = $this->makeDatetimeIncludedTimezone($this->DTSTART, $date_format);
 
@@ -288,7 +358,7 @@ class IcsLinksGenerator
 
     /**
      * Creates Uri parameters for AOL
-     * 
+     *
      * @return string
      */
     protected function getAOLParameters(): string
@@ -311,13 +381,14 @@ class IcsLinksGenerator
      */
     protected function getYahooParameters(): string
     {
-        $date_format = $this->parseToBool($this->ALLDAY) ? 'Ymd' : 'Ymd\THis\Z';
+        $is_allday = $this->parseToBool($this->ALLDAY);
+        $date_format = $is_allday ? 'Ymd' : 'Ymd\THis\Z';
 
-        $dtend = $this->makeDatetimeIncludedTimezone($this->DTEND);
-        $dtstart = $this->makeDatetimeIncludedTimezone($this->DTSTART);
+        $dtend = $this->makeDatetimeIncludedTimezone($this->DTEND, $date_format);
+        $dtstart = $this->makeDatetimeIncludedTimezone($this->DTSTART, $date_format);
 
         $description = $this->getEncodedPropValue('desc', $this->SUMMARY);
-        $duration = $this->getEncodedPropValue('dur');
+        $duration = $this->getEncodedPropValue('dur', $is_allday ? 'allday' : 'false');
         $et = $this->getEncodedPropValue('et', $dtend);
         $in_loc = $this->getEncodedPropValue('in_loc', $this->LOCATION);
         $st = $this->getEncodedPropValue('st', $dtstart);
@@ -335,4 +406,48 @@ class IcsLinksGenerator
         // &title=title
         // &v=60
     }
+
+	// ====================
+	//
+	//	Helpers
+	//
+	// ====================
+
+	/**
+	 * Parses a string to boolean if possible.
+	 *
+	 * @param string $str
+	 * @return bool
+	 */
+	protected function parseToBool(string $str): bool
+	{
+		return filter_var($str, FILTER_VALIDATE_BOOLEAN);
+	}
+
+	/**
+	 * Encodes prop and value to lower case.
+	 *
+	 * @param string $prop
+	 * @param string $value
+	 * @param bool $isFirst
+	 * @return string
+	 */
+	protected function getEncodedPropValue(string $prop, string $value = '', bool $isFirst = false): string
+	{
+		$value = urlencode($value);
+
+		return $isFirst ? "$prop=$value" : "&$prop=$value";
+	}
+
+	/**
+	 * Formats our datetime.
+	 *
+	 * @param string $datetime
+	 * @param string $format
+	 * @return string
+	 */
+	protected function makeDatetimeIncludedTimezone(string $datetime, string $format = 'Ymd\THis\Z'): string
+	{
+		return date($format, strtotime($datetime));
+	}
 }
