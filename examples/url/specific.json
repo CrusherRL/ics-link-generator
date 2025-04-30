@@ -1,0 +1,5 @@
+{
+	"OUTLOOK_MOBILE": "https:\/\/outlook.live.com\/calendar\/deeplink\/compose&allday=true&body=Meeting&enddt=2025-04-30T11%3A00%3A00&location=Office&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2025-04-30T10%3A00%3A00&subject=Discuss+project",
+	"AOL": "https:\/\/calendar.aol.com\/?&desc=Meeting&dur=allday&et=20250430&in_loc=Office&st=20250430&title=Discuss+project&v=60",
+	"YAHOO": "https:\/\/calendar.yahoo.com\/?&desc=Meeting&dur=allday&et=20250430&in_loc=Office&st=20250430&title=Discuss+project&v=60"
+}

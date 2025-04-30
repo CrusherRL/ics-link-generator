@@ -1,35 +1,35 @@
 {
-	"outlook": {
+	"OUTLOOK": {
 		"client": "outlook",
 		"label": "Outlook",
 		"url": "https:\/\/outlook.live.com\/calendar\/0\/action\/compose?&allday=false&body=&enddt=2023-08-15T16%3A30%3A00&location=&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2023-08-15T15%3A00%3A00&subject="
 	},
-	"outlook_mobile": {
+	"OUTLOOK_MOBILE": {
 		"client": "outlook_mobile",
-		"label": "Outlook Mobile",
-		"url": "https:\/\/outlook.live.com\/calendar\/deeplink\/compose?&allday=false&body=&enddt=2023-08-15T16%3A30%3A00&location=&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2023-08-15T15%3A00%3A00&subject="
+		"label": "Mobile Outlook",
+		"url": "https:\/\/outlook.live.com\/calendar\/deeplink\/compose&allday=false&body=&enddt=2023-08-15T16%3A30%3A00&location=&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2023-08-15T15%3A00%3A00&subject="
 	},
-	"office": {
+	"OFFICE": {
 		"client": "office",
 		"label": "Office 365",
 		"url": "https:\/\/outlook.office.com\/calendar\/0\/action\/compose?&allday=false&body=&enddt=2023-08-15T16%3A30%3A00&location=&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2023-08-15T15%3A00%3A00&subject="
 	},
-	"office_mobile": {
-		"client": "office_mobile",
+	"OFFICE_MOBILE": {
+		"client": "office",
 		"label": "Office 365 Mobile",
 		"url": "https:\/\/outlook.office.com\/calendar\/deeplink\/compose?&allday=false&body=&enddt=2023-08-15T16%3A30%3A00&location=&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2023-08-15T15%3A00%3A00&subject="
 	},
-	"google": {
+	"GOOGLE": {
 		"client": "google",
 		"label": "Google",
 		"url": "https:\/\/calendar.google.com\/calendar\/render?&action=TEMPLATE&dates=20230815T150000%2F20230815T163000&details=&location=&text="
 	},
-	"aol": {
+	"AOL": {
 		"client": "aol",
 		"label": "AOL",
 		"url": "https:\/\/calendar.aol.com\/?&desc=&dur=false&et=20230815T163000Z&in_loc=&st=20230815T150000Z&title=&v=60"
 	},
-	"yahoo": {
+	"YAHOO": {
 		"client": "yahoo",
 		"label": "Yahoo",
 		"url": "https:\/\/calendar.yahoo.com\/?&desc=&dur=false&et=20230815T163000Z&in_loc=&st=20230815T150000Z&title=&v=60"

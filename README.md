@@ -15,11 +15,11 @@ use CrusherRL\IcsLinksGenerator;
 
 // ...
 
-$start = '2023-08-15 15:00:00'; // required
-$end = '2023-08-15 16:30:00'; // required
-$summary = 'summaryHey!'; // optional
-$location = 'locationHey!'; // optional
-$description = 'descriptionHey!'; // optional
+$start = '2025-08-15 15:00:00'; // required
+$end = '2025-08-15 16:30:00'; // required
+$summary = 'Welcome on Board!'; // optional
+$location = 'any location'; // optional
+$description = 'Let\'s talk about this stuff'; // optional
 $allDay = 'false'; // optional - NOTE: it should be true or false as string, since we urlencode this, it would be converted to 0 (false) or 1 (true)
 
 // Building base for the generator
@@ -27,13 +27,15 @@ $allDay = 'false'; // optional - NOTE: it should be true or false as string, sin
 $generator = new IcsLinksGenerator($start, $end, $summary, $location, $description, $allDay);
 // OR
 $generator = IcsLinksGenerator::make(['DTSTART' => $start, 'DTEND' => $end]);
+// OR Like from an URL!
+$generator = IcsLinksGenerator::fromUrl('https://example.com/create-event?summary=Meeting&description=Discuss+project&location=Office&start=20250430T100000Z&end=20250430T110000Z');
 
 // Actual Generating the urls
 // Generating all possible urls
 $urls = $generator->generate();
 
 // Generating only specific urls
-$urls = $generator->generateSpecific(['yahoo', 'aol', 'outlook_mobile']);
+$urls = $generator->generateSpecific([IcsLinksGenerator::YAHOO, IcsLinksGenerator::AOL, IcsLinksGenerator::OUTLOOK_MOBILE]);
 ```
 
 ### Output
@@ -59,12 +61,12 @@ use CrusherRL\IcsLinksGenerator;
 
 // ...
 
-$generator->setLabels(['outlook' => 'Outlook.com']);
+$generator->setLabels([IcsLinksGenerator::OUTLOOK => 'Outlook.com']);
 ```
 Our output will change from this:
 ```json
 {
-  "outlook": {
+  "OUTLOOK": {
     "client": "outlook",
     "label": "Outlook",
     "url": "https:\/\/outlook.live.com\/calendar\/0\/action\/compose?&allday=false&body=&enddt=2023-08-15T16%3A30%3A00&location=&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2023-08-15T15%3A00%3A00&subject="
@@ -74,7 +76,7 @@ Our output will change from this:
 to this:
 ```json
 {
-  "outlook": {
+  "OUTLOOK": {
     "client": "outlook",
     "label": "Outlook.com",
     "url": "https:\/\/outlook.live.com\/calendar\/0\/action\/compose?&allday=false&body=&enddt=2023-08-15T16%3A30%3A00&location=&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2023-08-15T15%3A00%3A00&subject="
@@ -95,9 +97,9 @@ use CrusherRL\IcsLinksGenerator;
 $urls = $generator->generate(false);
 
 // Generating only specific urls
-$urls = $generator->generateSpecific(['yahoo', 'aol', 'outlook_mobile'], false);
+$urls = $generator->generateSpecific([IcsLinksGenerator::YAHOO, IcsLinksGenerator::AOL, IcsLinksGenerator::OUTLOOK_MOBILE], false);
 
-// OR you can get url only like this
+// OR you can get url only, like this
 $aol = $generator->makeAOLUrl();
 $yahoo = $generator->makeYahooUrl();
 $google = $generator->makeGoogleUrl();

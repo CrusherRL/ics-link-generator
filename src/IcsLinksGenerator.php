@@ -4,6 +4,57 @@ namespace CrusherRL;
 
 class IcsLinksGenerator
 {
+    const OUTLOOK = 'OUTLOOK';
+    const OUTLOOK_MOBILE = 'OUTLOOK_MOBILE';
+    const OFFICE = 'OFFICE';
+    const OFFICE_MOBILE = 'OFFICE_MOBILE';
+    const GOOGLE = 'GOOGLE';
+    const AOL = 'AOL';
+    const YAHOO = 'YAHOO';
+
+    /**
+     * Summary of Calendar Apps.
+     * 
+     * @var array
+     */
+    protected array $calendarApps = [
+        'OUTLOOK' => [
+            'client' => 'outlook',
+            'label'  => 'Outlook',
+            'url'    => 'https://outlook.live.com/calendar/0/action/compose?',
+        ],
+        'OUTLOOK_MOBILE' => [
+            'client' => 'outlook_mobile',
+            'label'  => 'Outlook Mobile',
+            'url'    => 'https://outlook.live.com/calendar/deeplink/compose',
+        ],
+        'OFFICE' => [
+            'client' => 'office',
+            'label'  => 'Office 365',
+            'url'    => 'https://outlook.office.com/calendar/0/action/compose?',
+        ],
+        'OFFICE_MOBILE' => [
+            'client' => 'office',
+            'label'  => 'Office 365 Mobile',
+            'url'    => 'https://outlook.office.com/calendar/deeplink/compose?',
+        ],
+        'GOOGLE' => [
+            'client' => 'google',
+            'label'  => 'Google',
+            'url'    => 'https://calendar.google.com/calendar/render?',
+        ],
+        'AOL' => [
+            'client' => 'aol',
+            'label'  => 'AOL',
+            'url'    => 'https://calendar.aol.com/?',
+        ],
+        'YAHOO' => [
+            'client' => 'yahoo',
+            'label'  => 'Yahoo',
+            'url'    => 'https://calendar.yahoo.com/?',
+        ]
+    ];
+
     /**
      * Our variables we use to build our urls.
      *
@@ -15,36 +66,6 @@ class IcsLinksGenerator
     protected string $LOCATION = '';
     protected string $DESCRIPTION = '';
     protected string $ALLDAY = 'false';
-
-    /**
-     * Base urls.
-     *
-     * @var array|string[]
-     */
-    protected array $baseUrls = [
-        'outlook'        => 'https://outlook.live.com/calendar/0/action/compose?',
-        'outlook_mobile' => 'https://outlook.live.com/calendar/deeplink/compose?',
-        'office'         => 'https://outlook.office.com/calendar/0/action/compose?',
-        'office_mobile'  => 'https://outlook.office.com/calendar/deeplink/compose?',
-        'google'         => 'https://calendar.google.com/calendar/render?',
-        'aol'            => 'https://calendar.aol.com/?',
-        'yahoo'          => 'https://calendar.yahoo.com/?',
-    ];
-
-    /**
-     * Labels for our urls
-     *
-     * @var array
-     */
-    protected array $labels = [
-        'outlook'        => 'Outlook',
-        'outlook_mobile' => 'Outlook Mobile',
-        'office'         => 'Office 365',
-        'office_mobile'  => 'Office 365 Mobile',
-        'google'         => 'Google',
-        'aol'            => 'AOL',
-        'yahoo'          => 'Yahoo',
-    ];
 
     /**
      * Building basis for our Generator.
@@ -77,13 +98,55 @@ class IcsLinksGenerator
      */
     public static function make(array $data): static
     {
+        $allday = $data['ALLDAY'] ?? $data['ALL_DAY'] ?? false;
+        $allday = $allday ? 'true' : 'false';
+
         return new static(
-			$data['DTSTART'],
-			$data['DTEND'],
-				$data['SUMMARY'] ?? '',
-				$data['LOCATION'] ?? '',
-				$data['DESCRIPTION'] ?? '',
-				$data['ALLDAY'] ?? 'false');
+			$data['DTSTART'] ?? $data['START'],
+			$data['DTEND'] ?? $data['END'],
+            $data['SUMMARY'] ?? '',
+            $data['LOCATION'] ?? '',
+            $data['DESCRIPTION'] ?? '',
+            $allday
+        );
+    }
+
+    /**
+     * Encodes Data from url.
+     * 
+     * Note: All parameters are handled case-insensitive.
+     * - Start date => 'DTSTART' or 'START'
+     * - End date => 'DTEND' or 'END'
+     * - Summary => 'SUMMARY'
+     * - location => 'LOCATION'
+     * - Description => 'DESCRIPTION'
+     * - All Day => 'ALLDAY' or 'ALL_DAY'
+     * 
+     * @param string $url
+     * @return IcsLinksGenerator
+     */
+    public static function fromUrl(string $url): static
+    {
+        $query = parse_url($url)['query'];
+        parse_str($query, $data);
+        $data = array_change_key_case($data, CASE_UPPER);
+        
+        $start = $data['DTSTART'] ?? $data['START'];
+        $end = $data['DTEND'] ?? $data['END'];
+        $summary = $data['SUMMARY'] ?? '';
+        $location = $data['LOCATION'] ?? '';
+        $description = $data['DESCRIPTION'] ?? '';
+        $allday = $data['ALLDAY'] ?? $data['ALL_DAY'] ?? false;
+        $allday = $allday ? 'true' : 'false';
+    
+        return new static(
+            $start,
+            $end, 
+            $summary,
+            $location,
+            $description,
+            $allday
+        );
     }
 
 	// ====================
@@ -91,26 +154,6 @@ class IcsLinksGenerator
 	//	Refactoring output
 	//
 	// ====================
-
-    /**
-     * Makes a serialized array of label, url and client
-     *
-     * @return array
-     */
-    protected function getSerializedUrls(): array
-    {
-		$urls = [];
-
-		foreach ($this->labels as $client => $label) {
-			$urls[$client] = [
-				'client' => $client,
-				'label' => $label,
-				'url'   => $this->baseUrls[$client]
-			];
-		}
-
-        return $urls;
-    }
 
     /**
      * Set Labels in a key value pair.
@@ -121,7 +164,7 @@ class IcsLinksGenerator
     public function setLabels(array $labels): static
     {
         foreach ($labels as $key => $label) {
-            $this->labels[$key] = $label;
+            $this->calendarApps[$key]['label'] = $label;
         }
 
         return $this;
@@ -141,10 +184,14 @@ class IcsLinksGenerator
 	 */
     public function generate(bool $serialize = true): array
     {
-        return array_map(function ($client) use ($serialize) {
-            $client['url'] .= $this->getParameters($client['client']);
-			return $serialize ? $client : $client['url'];
-        }, $this->getSerializedUrls());
+        $data = [];
+
+        foreach ($this->calendarApps as $key => $client) {
+            $client['url'] .= $this->getParameters($key);
+            $data[$key] = $serialize ? $client : $client['url'];
+        }
+
+        return $data;
     }
 
 	/**
@@ -170,11 +217,11 @@ class IcsLinksGenerator
     public function getParameters(string $client): string
     {
         return match ($client) {
-            'outlook', 'outlook_mobile' => $this->getOutlookParameters(),
-            'office', 'office_mobile' => $this->getOfficeParameters(),
-            'google' => $this->getGoogleParameters(),
-            'aol' => $this->getAOLParameters(),
-            'yahoo' => $this->getYahooParameters(),
+            static::OUTLOOK, static::OUTLOOK_MOBILE => $this->getOutlookParameters(),
+            static::OFFICE, static::OFFICE_MOBILE   => $this->getOfficeParameters(),
+            static::GOOGLE                          => $this->getGoogleParameters(),
+            static::AOL                             => $this->getAOLParameters(),
+            static::YAHOO                           => $this->getYahooParameters(),
         };
     }
 
@@ -191,7 +238,7 @@ class IcsLinksGenerator
 	 */
 	public function makeOutlookUrl(): string
 	{
-		return $this->makeUrlFromClient('outlook');
+		return $this->makeUrlFromClient(static::OUTLOOK);
 	}
 
 	/**
@@ -201,7 +248,7 @@ class IcsLinksGenerator
 	 */
 	public function makeOutlookMobileUrl(): string
 	{
-		return $this->makeUrlFromClient('outlook_mobile');
+		return $this->makeUrlFromClient(static::OUTLOOK_MOBILE);
 	}
 
 	/**
@@ -211,7 +258,7 @@ class IcsLinksGenerator
 	 */
 	public function makeOfficeUrl(): string
 	{
-		return $this->makeUrlFromClient('office');
+		return $this->makeUrlFromClient(static::OFFICE);
 	}
 
 	/**
@@ -221,7 +268,7 @@ class IcsLinksGenerator
 	 */
 	public function makeOfficeMobileUrl(): string
 	{
-		return $this->makeUrlFromClient('office_mobile');
+		return $this->makeUrlFromClient(static::OFFICE_MOBILE);
 	}
 
 	/**
@@ -231,7 +278,7 @@ class IcsLinksGenerator
 	 */
 	public function makeGoogleUrl(): string
 	{
-		return $this->makeUrlFromClient('google');
+		return $this->makeUrlFromClient(static::GOOGLE);
 	}
 
 	/**
@@ -241,7 +288,7 @@ class IcsLinksGenerator
 	 */
 	public function makeAOLUrl(): string
 	{
-		return $this->makeUrlFromClient('aol');
+		return $this->makeUrlFromClient(static::AOL);
 	}
 
 	/**
@@ -251,7 +298,7 @@ class IcsLinksGenerator
 	 */
 	public function makeYahooUrl(): string
 	{
-		return $this->makeUrlFromClient('yahoo');
+		return $this->makeUrlFromClient(static::YAHOO);
 	}
 
 	/**
@@ -262,7 +309,7 @@ class IcsLinksGenerator
 	 */
 	private function makeUrlFromClient(string $client): string
 	{
-		return $this->baseUrls[$client] . $this->getParameters($client);
+		return $this->calendarApps[$client]['url'] . $this->getParameters($client);
 	}
 
 	// ====================
@@ -284,7 +331,7 @@ class IcsLinksGenerator
 
         $allday = "&allday=$this->ALLDAY";
         $body = $this->getEncodedPropValue('body', $this->SUMMARY);
-        $enddt= $this->getEncodedPropValue('enddt', $dtend);
+        $enddt = $this->getEncodedPropValue('enddt', $dtend);
         $location = $this->getEncodedPropValue('location', $this->LOCATION);
         $path = $this->getEncodedPropValue('path', '/calendar/action/compose');
         $rru = $this->getEncodedPropValue('rru', 'addevent');

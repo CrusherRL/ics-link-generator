@@ -1,0 +1,37 @@
+{
+	"OUTLOOK": {
+		"client": "outlook",
+		"label": "Outlook",
+		"url": "https:\/\/outlook.live.com\/calendar\/0\/action\/compose?&allday=true&body=Meeting&enddt=2025-04-30T11%3A00%3A00&location=Office&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2025-04-30T10%3A00%3A00&subject=Discuss+project"
+	},
+	"OUTLOOK_MOBILE": {
+		"client": "outlook_mobile",
+		"label": "Outlook Mobile",
+		"url": "https:\/\/outlook.live.com\/calendar\/deeplink\/compose&allday=true&body=Meeting&enddt=2025-04-30T11%3A00%3A00&location=Office&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2025-04-30T10%3A00%3A00&subject=Discuss+project"
+	},
+	"OFFICE": {
+		"client": "office",
+		"label": "Office 365",
+		"url": "https:\/\/outlook.office.com\/calendar\/0\/action\/compose?&allday=true&body=Meeting&enddt=2025-04-30T11%3A00%3A00&location=Office&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2025-04-30T10%3A00%3A00&subject=Discuss+project"
+	},
+	"OFFICE_MOBILE": {
+		"client": "office",
+		"label": "Office 365 Mobile",
+		"url": "https:\/\/outlook.office.com\/calendar\/deeplink\/compose?&allday=true&body=Meeting&enddt=2025-04-30T11%3A00%3A00&location=Office&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt=2025-04-30T10%3A00%3A00&subject=Discuss+project"
+	},
+	"GOOGLE": {
+		"client": "google",
+		"label": "Google",
+		"url": "https:\/\/calendar.google.com\/calendar\/render?&action=TEMPLATE&dates=20250430%2F20250430&details=Meeting&location=Office&text=Discuss+project"
+	},
+	"AOL": {
+		"client": "aol",
+		"label": "AOL",
+		"url": "https:\/\/calendar.aol.com\/?&desc=Meeting&dur=allday&et=20250430&in_loc=Office&st=20250430&title=Discuss+project&v=60"
+	},
+	"YAHOO": {
+		"client": "yahoo",
+		"label": "Yahoo",
+		"url": "https:\/\/calendar.yahoo.com\/?&desc=Meeting&dur=allday&et=20250430&in_loc=Office&st=20250430&title=Discuss+project&v=60"
+	}
+}
