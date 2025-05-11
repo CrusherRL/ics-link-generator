@@ -28,7 +28,9 @@ $generator = new IcsLinksGenerator($start, $end, $summary, $location, $descripti
 // OR
 $generator = IcsLinksGenerator::make(['DTSTART' => $start, 'DTEND' => $end]);
 // OR Like from an URL!
-$generator = IcsLinksGenerator::fromUrl('https://example.com/create-event?summary=Meeting&description=Discuss+project&location=Office&start=20250430T100000Z&end=20250430T110000Z');
+$generator = IcsLinksGenerator::fromUrl('https://example.com/create-event?summary=Meeting&description=Discuss+project&location=Office&start=20250430T100000Z&end=20250430T110000Z')
+// OR Like from an URL but the query is base64 encoded
+$generator = IcsLinksGenerator::fromUrl('https://example.com/create-event?c3VtbWFyeT1NZWV0aW5nJmRlc2NyaXB0aW9uPURpc2N1c3MrcHJvamVjdCZsb2NhdGlvbj1PZmZpY2Umc3RhcnQ9MjAyNTA0MzBUMTAwMDAwWiZlbmQ9MjAyNTA0MzBUMTEwMDAwWg');
 
 // Actual Generating the urls
 // Generating all possible urls
@@ -52,6 +54,18 @@ After generating the urls, we receive those kind of arrays.
 [Example of all urls](examples/unserialized/all.json)
 
 [Example of specific urls](examples/unserialized/specific.json)
+
+**Url**
+
+[Example of all urls](examples/url/all.json)
+
+[Example of specific urls](examples/url/specific.json)
+
+**base64**
+
+[Example of all urls](examples/base64/all.json)
+
+[Example of specific urls](examples/base64/specific.json)
 
 ### Format output
 If needed you can change the labels, before generating the urls. Just simply setLabels which you want to change.
