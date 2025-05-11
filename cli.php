@@ -9,6 +9,7 @@ function storeAsFile(string $path, mixed $content): bool
 }
 
 $url = 'https://example.com/create-event?summary=Meeting&description=Discuss+project&location=Office&start=20250430T100000Z&end=20250430T110000Z&all_day=true';
+$query = '?c3VtbWFyeT1NZWV0aW5nJmRlc2NyaXB0aW9uPURpc2N1c3MrcHJvamVjdCZsb2NhdGlvbj1PZmZpY2Umc3RhcnQ9MjAyNTA0MzBUMTAwMDAwWiZlbmQ9MjAyNTA0MzBUMTEwMDAwWg';
 
 $start = '2023-08-15 15:00:00';
 $end = '2023-08-15 16:30:00';
@@ -29,6 +30,7 @@ $generator3 = IcsLinksGenerator::make([
 	'DESCRIPTION' => $description,
 	'ALLDAY'      => $allDay
 ]);
+$generator4 = IcsLinksGenerator::fromUrl($query, true);
 
 $generator->setLabels([IcsLinksGenerator::OUTLOOK_MOBILE => 'Mobile Outlook']);
 
@@ -43,4 +45,8 @@ storeAsFile('examples/url/all.json', $generator2->generate());
 // non-serialized
 storeAsFile('examples/unserialized/specific.json', $generator3->generateSpecific($specifics, false));
 storeAsFile('examples/unserialized/all.json', $generator3->generate(false));
+
+// from Base64
+storeAsFile('examples/base64/specific.json', $generator4->generateSpecific($specifics, false));
+storeAsFile('examples/base64/all.json', $generator4->generate(false));
 

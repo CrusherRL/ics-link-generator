@@ -125,9 +125,14 @@ class IcsLinksGenerator
      * @param string $url
      * @return IcsLinksGenerator
      */
-    public static function fromUrl(string $url): static
+    public static function fromUrl(string $url, bool $base64 = false): static
     {
         $query = parse_url($url)['query'];
+
+        if ($base64) {
+            $query = base64_decode($query);
+        }
+
         parse_str($query, $data);
         $data = array_change_key_case($data, CASE_UPPER);
         
